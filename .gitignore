@@ -1,0 +1,34 @@
+# 🚀 공통 (백엔드 & 프론트엔드)
+
+# Node.js 관련
+node_modules/
+dist/
+package-lock.json
+
+# 환경 변수 파일
+.env
+.env.local
+.env.development
+.env.production
+
+# 로그 파일
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.pid
+*.pid.lock
+*.seed
+
+# IDE 및 OS 관련 파일
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

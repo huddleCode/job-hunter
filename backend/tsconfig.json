@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "outDir": "./dist",   // ✅ 빌드된 JS 파일이 dist/ 폴더에 저장됨
+    "rootDir": "./src",   // ✅ TypeScript 소스 코드가 있는 폴더 지정
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  }
+}
