@@ -1,13 +1,12 @@
-// 스크래핑 코드
 import puppeteer from "puppeteer";
 
-const scrapeJobs = async () => {
-    console.log("✅ scrapeJobs 함수 실행됨!"); // ✅ 실행 확인용 로그
+const jobKoreaScrape = async () => {
+    console.log("✅ [JobKorea Scraper] 실행됨!");
 
     try {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
-        console.log("✅ Puppeteer 브라우저 실행됨!"); // ✅ 실행 확인용 로그
+        console.log("✅ Puppeteer 브라우저 실행됨!");
 
         const jobName = "프론트엔드";
         const region = "B040"; // 과천
@@ -16,9 +15,9 @@ const scrapeJobs = async () => {
             `https://www.jobkorea.co.kr/Search/?stext=${jobName}&local=${region}&tabType=recruit&Page_No=1`,
             { waitUntil: "networkidle2" }
         );
-        console.log("✅ 페이지 이동 완료!"); // ✅ 실행 확인용 로그
+        console.log("✅ 페이지 이동 완료!");
 
-        const targets = await page.$$eval(
+        const jobs = await page.$$eval(
             'section.content-recruit[data-content="recruit"] article.list article.list-item',
             (elements) =>
                 elements.map((e) => ({
@@ -46,15 +45,13 @@ const scrapeJobs = async () => {
         );
 
         await browser.close();
-        console.log("✅ 스크래핑 완료");
-        // console.log("✅ 스크래핑된 데이터:", JSON.stringify(targets, null, 2)); // ✅ 데이터 로그 추가
+        console.log("✅ 스크래핑 완료!");
 
-        return targets;
+        return jobs;
     } catch (error) {
-        console.error("❌ 스크래핑 오류 발생:", error);
+        console.error("❌ [JobKorea Scraper] 스크래핑 오류 발생:", error);
         return [];
     }
-
 };
 
-export { scrapeJobs };
+export { jobKoreaScrape };
