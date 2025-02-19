@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// ✅ "/" 요청을 jobKoreaRoutes.ts에서 처리
 app.use("/", jobKoreaRoutes);
 
 app.listen(PORT, () => {

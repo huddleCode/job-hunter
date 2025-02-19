@@ -1,6 +1,7 @@
 // src/components/JobList.tsx
 import { useEffect, useState } from "react";
-import fetchJobs from "../api/jobApi";
+import { Link } from "react-router-dom"; // ✅ Link 추가
+import {fetchJobs} from "../api/jobApi";
 import { Job } from "../types/job";
 
 // export type Job = {
@@ -31,25 +32,23 @@ const JobList = () => {
   if (!jobs.length) return <p>❌ 채용 정보가 없습니다.</p>;
 
   return (
-    <div className="container">
-      <h1 className="text-2xl md:text-3xl m-3">📌 채용 공고</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {jobs.map((job, index) => (
-          <div key={index} className="p-5 border-2 rounded-md">
-            <h3 className="text-xl font-bold mb-3">
-              <a href={job.link} target="_blank" rel="noopener noreferrer">
-                {job.title}
-              </a>
-            </h3>
-            <p>🏢 {job.company}</p>
-            <p>📅 {job.deadline}</p>
-            <p>📍 {job.location}</p>
-            <p>📌 {job.workType} / {job.workExperience} / {job.education}</p>
-          </div>
+            <Link
+                key={index}
+                to="/job-detail"
+                state={{ url: job.link }}  // ✅ 상세페이지 URL 전달
+                className="block p-5 border-2 rounded-md transition hover:bg-gray-100"
+            >
+                <h3 className="text-xl font-bold mb-3">{job.title}</h3>
+                <p>🏢 {job.company}</p>
+                <p>📅 {job.deadline}</p>
+                <p>📍 {job.location}</p>
+                <p>📌 {job.workType} / {job.workExperience} / {job.education}</p>
+            </Link>
         ))}
-      </div>
     </div>
-  );
+);
 };
 
 export default JobList;

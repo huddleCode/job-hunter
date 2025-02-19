@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import JobList from "../components/JobList";
+import JobList from "./JobList";
 
 const Home = () => {
   return (

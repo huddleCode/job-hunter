@@ -20,28 +20,33 @@ const jobKoreaScrape = async () => {
         const jobs = await page.$$eval(
             'section.content-recruit[data-content="recruit"] article.list article.list-item',
             (elements) =>
-                elements.map((e) => ({
-                    title: (e.querySelector(".information-title-link") as HTMLElement)?.innerText.trim() || "제목 없음",
-                    company: (e.querySelector(".corp-name-link") as HTMLElement)?.innerText.trim() || "회사명 없음",
-                    workExperience:
-                        (e.querySelector(".chip-information-group .chip-information-item:nth-child(1)") as HTMLElement)
-                            ?.innerText.trim() || "경력 없음",
-                    education:
-                        (e.querySelector(".chip-information-group .chip-information-item:nth-child(2)") as HTMLElement)
-                            ?.innerText.trim() || "학력 없음",
-                    workType:
-                        (e.querySelector(".chip-information-group .chip-information-item:nth-child(3)") as HTMLElement)
-                            ?.innerText.trim() || "근무형태 없음",
-                    location:
-                        (e.querySelector(".chip-information-group .chip-information-item:nth-child(4)") as HTMLElement)
-                            ?.innerText.trim() || "지역 없음",
-                    deadline:
-                        (e.querySelector(".chip-information-group .chip-information-item:nth-child(5)") as HTMLElement)
-                            ?.innerText.trim() || "마감일 없음",
-                    link: e.querySelector(".information-title-link")?.getAttribute("href")
-                        ? `https://www.jobkorea.co.kr${e.querySelector(".information-title-link")?.getAttribute("href")}`
-                        : "링크 없음",
-                }))
+                elements.map((e) => {
+                    const baseUrl = "https://www.jobkorea.co.kr";
+                    const linkElement = e.querySelector(".information-title-link") as HTMLAnchorElement;
+                    const relativeUrl = linkElement?.getAttribute("href") || "";
+                    const fullUrl = baseUrl + relativeUrl;  // ✅ 전체 URL 생성
+
+                    return {
+                        title: linkElement?.innerText.trim() || "제목 없음",
+                        company: (e.querySelector(".corp-name-link") as HTMLElement)?.innerText.trim() || "회사명 없음",
+                        workExperience:
+                            (e.querySelector(".chip-information-group .chip-information-item:nth-child(1)") as HTMLElement)
+                                ?.innerText.trim() || "경력 없음",
+                        education:
+                            (e.querySelector(".chip-information-group .chip-information-item:nth-child(2)") as HTMLElement)
+                                ?.innerText.trim() || "학력 없음",
+                        workType:
+                            (e.querySelector(".chip-information-group .chip-information-item:nth-child(3)") as HTMLElement)
+                                ?.innerText.trim() || "근무형태 없음",
+                        location:
+                            (e.querySelector(".chip-information-group .chip-information-item:nth-child(4)") as HTMLElement)
+                                ?.innerText.trim() || "지역 없음",
+                        deadline:
+                            (e.querySelector(".chip-information-group .chip-information-item:nth-child(5)") as HTMLElement)
+                                ?.innerText.trim() || "마감일 없음",
+                        link: fullUrl  // ✅ 상세페이지 URL을 저장
+                    };
+                })
         );
 
         await browser.close();
