@@ -1,4 +1,6 @@
 export type Job = {
+    id: number,
+    listno: number,
     title: string;
     company: string;
     workExperience: string;

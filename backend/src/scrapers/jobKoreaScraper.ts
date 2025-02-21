@@ -1,6 +1,20 @@
 import puppeteer from "puppeteer";
 
-const jobKoreaScrape = async () => {
+// ✅ Job 타입 정의
+interface Job {
+    id: string;
+    listno: string;
+    title: string;
+    company: string;
+    workExperience: string;
+    education: string;
+    workType: string;
+    location: string;
+    deadline: string;
+    link: string;
+}
+
+const jobKoreaScrape = async (): Promise<Job[]> => {
     console.log("✅ [JobKorea Scraper] 실행됨!");
 
     try {
@@ -17,16 +31,35 @@ const jobKoreaScrape = async () => {
         );
         console.log("✅ 페이지 이동 완료!");
 
-        const jobs = await page.$$eval(
+        const jobs: Job[] = await page.$$eval(
             'section.content-recruit[data-content="recruit"] article.list article.list-item',
-            (elements) =>
-                elements.map((e) => {
-                    const baseUrl = "https://www.jobkorea.co.kr";
+            (elements) => {
+                const baseUrl = "https://www.jobkorea.co.kr";
+                const jobList: Job[] = [];
+
+                elements.forEach((e) => {
+                    const jobId = e.getAttribute("data-gno") || e.getAttribute("data-gino") || "";
+                    if (!jobId) {
+                        console.warn("⚠️ 공고 ID 없음 → 스킵됨!", e);
+                        return;
+                    }
+
                     const linkElement = e.querySelector(".information-title-link") as HTMLAnchorElement;
                     const relativeUrl = linkElement?.getAttribute("href") || "";
-                    const fullUrl = baseUrl + relativeUrl;  // ✅ 전체 URL 생성
+                    const fullUrl = relativeUrl.startsWith("http") ? relativeUrl : baseUrl + relativeUrl;
 
-                    return {
+                    if (!fullUrl || fullUrl === baseUrl) {
+                        console.warn("⚠️ URL이 없음 또는 올바르지 않음 → 스킵됨!", jobId);
+                        return;
+                    }
+
+                    // ✅ listno 값 추출 (기본값 설정)
+                    const listnoMatch = fullUrl.match(/listno=(\d+)/);
+                    const listno = listnoMatch ? listnoMatch[1] : ""; // ✅ null 대신 "" (빈 문자열)
+
+                    jobList.push({
+                        id: jobId,
+                        listno, // ✅ string 타입으로 설정됨
                         title: linkElement?.innerText.trim() || "제목 없음",
                         company: (e.querySelector(".corp-name-link") as HTMLElement)?.innerText.trim() || "회사명 없음",
                         workExperience:
@@ -44,9 +77,12 @@ const jobKoreaScrape = async () => {
                         deadline:
                             (e.querySelector(".chip-information-group .chip-information-item:nth-child(5)") as HTMLElement)
                                 ?.innerText.trim() || "마감일 없음",
-                        link: fullUrl  // ✅ 상세페이지 URL을 저장
-                    };
-                })
+                        link: fullUrl
+                    });
+                });
+
+                return jobList;
+            }
         );
 
         await browser.close();
@@ -58,5 +94,6 @@ const jobKoreaScrape = async () => {
         return [];
     }
 };
+
 
 export { jobKoreaScrape };
