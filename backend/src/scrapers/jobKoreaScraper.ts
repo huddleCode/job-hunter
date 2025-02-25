@@ -12,6 +12,7 @@ interface Job {
     location: string;
     deadline: string;
     link: string;
+    description: string;
 }
 
 const jobKoreaScrape = async (): Promise<Job[]> => {
@@ -77,7 +78,8 @@ const jobKoreaScrape = async (): Promise<Job[]> => {
                         deadline:
                             (e.querySelector(".chip-information-group .chip-information-item:nth-child(5)") as HTMLElement)
                                 ?.innerText.trim() || "마감일 없음",
-                        link: fullUrl
+                        link: fullUrl,
+                        description: "채용 상세 정보를 불러오는 중입니다." // ✅ Weaviate 저장을 위해 기본값 추가
                     });
                 });
 

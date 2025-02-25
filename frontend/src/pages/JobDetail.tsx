@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "../config";
+import axiosInstance from "../api/axiosInstance"; // ✅ axiosInstance 사용
 
 const JobDetail = () => {
     const { listno } = useParams();  
@@ -9,7 +9,7 @@ const JobDetail = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!listno || listno === "undefined") {  
+        if (!listno || listno === "undefined") {
             console.error("❌ JobDetail: 잘못된 listno", { listno, state });
             return;
         }
@@ -26,16 +26,16 @@ const JobDetail = () => {
 
         const getJobDetail = async () => {
             try {
-                console.log(`📢 Fetching job detail: ${API_BASE_URL}/job-detail/${listno}?id=${state.id}`);
-                
-                const response = await fetch(`${API_BASE_URL}/job-detail/${listno}?id=${state.id}`);
-                if (!response.ok) throw new Error(`❌ 서버 응답 오류 (${response.status})`);
+                console.log(`📢 Fetching job detail: /job-detail/${listno}?id=${state.id}`);
 
-                const data = await response.json();
+                const { data } = await axiosInstance.get(`/job-detail/${listno}?id=${state.id}`);
+
                 if (!data) throw new Error("❌ 받은 데이터가 null 또는 undefined");
-                
-                setJob(data);
+
                 console.log("📌 [JobDetail] Fetched Data:", data);
+                setJob(data);
+
+                console.log(data);
                 
             } catch (error) {
                 console.error("❌ 상세 정보 API 호출 실패:", error);

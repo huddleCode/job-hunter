@@ -8,7 +8,7 @@ const router = Router();
 const DATA_DIR = path.join(__dirname, "../../data");
 
 // ✅ "/" 요청 시 기존 데이터를 반환 (없으면 크롤링 후 반환)
-router.get("/", async (req: Request, res: Response): Promise<void> => {
+router.get("/jobs", async (req: Request, res: Response): Promise<void> => {
     try {
         const jobs = await jobKoreaFetch();
         res.json(jobs);
