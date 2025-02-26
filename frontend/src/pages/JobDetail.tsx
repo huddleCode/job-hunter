@@ -34,9 +34,6 @@ const JobDetail = () => {
 
                 console.log("📌 [JobDetail] Fetched Data:", data);
                 setJob(data);
-
-                console.log(data);
-                
             } catch (error) {
                 console.error("❌ 상세 정보 API 호출 실패:", error);
             } finally {

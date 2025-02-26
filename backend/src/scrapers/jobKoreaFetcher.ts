@@ -4,14 +4,20 @@ import axios from "axios";
 import { jobKoreaScrape } from "./jobKoreaScraper";
 
 const DATA_DIR = path.join(__dirname, "../../data");
-let currentJobFolder = ""; // ✅ 현재 실행된 목록 JSON이 속한 폴더 (morning or afternoon)
 
 interface JobPosting {
-    company: string;
+    id: string;
+    listno: string;
     title: string;
+    company: string;
+    workExperience: string;
+    education: string;
+    workType: string;
+    location: string;
+    deadline: string;
+    link: string;
     description: string;
 }
-
 
 const getJobKoreaFilePath = (): { folderPath: string; filePath: string } => {
     const now = new Date();
@@ -21,7 +27,6 @@ const getJobKoreaFilePath = (): { folderPath: string; filePath: string } => {
     const folderPath = path.join(DATA_DIR, formattedDate, timeSlot);
     const filePath = path.join(folderPath, "listings.json");
 
-    currentJobFolder = folderPath; // ✅ 현재 목록 폴더를 글로벌 변수에 저장
     return { folderPath, filePath };
 };
 
@@ -33,9 +38,17 @@ const saveToWeaviate = async (jobData: JobPosting[]) => {
             const data = {
                 class: "JobPostings",
                 properties: {
-                    company: job.company,
+                    id: job.id,
+                    listno: job.listno,
                     title: job.title,
-                    description: job.description
+                    company: job.company,
+                    workExperience: job.workExperience,
+                    education: job.education,
+                    workType: job.workType,
+                    location: job.location,
+                    deadline: job.deadline,
+                    link: job.link,
+                    description: job.description, // 기본값으로 "채용 상세 정보를 불러오는 중입니다." 사용
                 }
             };
 
@@ -43,9 +56,9 @@ const saveToWeaviate = async (jobData: JobPosting[]) => {
                 headers: { "Content-Type": "application/json" }
             });
 
-            console.log(`✅ [Weaviate] 데이터 저장 완료: ${job.title} @ ${job.company}`);
+            console.log(`✅ [Weaviate] 목록 저장 완료: ${job.title} @ ${job.company}`);
         } catch (error) {
-            console.error(`❌ [Weaviate] 저장 실패: ${job.title} @ ${job.company}`, error);
+            console.error(`❌ [Weaviate] 목록 저장 실패: ${job.title} @ ${job.company}`, error);
         }
     }
 };
@@ -61,7 +74,7 @@ const jobKoreaFetch = async () => {
     } catch {
         console.log(`⚠️ [JobKorea Fetcher] 기존 데이터 없음 → 크롤링 실행!`);
 
-        const jobData: JobPosting[] = await jobKoreaScrape();
+        const jobData: JobPosting[] = await jobKoreaScrape();  // ✅ `JobPosting` 타입 사용
 
         if (jobData.length > 0) {
             await fs.mkdir(folderPath, { recursive: true });
@@ -79,4 +92,4 @@ const jobKoreaFetch = async () => {
     }
 };
 
-export { jobKoreaFetch, currentJobFolder };
+export { jobKoreaFetch };
