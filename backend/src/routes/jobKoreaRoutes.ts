@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { jobKoreaFetch } from "../scrapers/jobKoreaFetcher";
 import { jobKoreaDetailScrape } from "../scrapers/jobKoreaDetailScraper";
+import { apiLogger } from "../utils/logger";
 
 const router = Router();
 const DATA_DIR = path.join(__dirname, "../../data");
@@ -14,7 +15,7 @@ router.get("/jobs", async (req: Request, res: Response): Promise<void> => {
         res.json(jobs);
     } catch (error: unknown) {
         const err = error as NodeJS.ErrnoException;
-        console.error("❌ [JobKorea Fetch] 오류 발생:", err.message);
+        apiLogger.error("❌ [JobKorea Fetch] 오류 발생:", err.message);
         res.status(500).json({ message: "데이터를 불러오는 중 오류 발생", error: err.message });
     }
 });
@@ -36,34 +37,68 @@ router.get("/job-detail/:listno", async (req: Request, res: Response): Promise<v
     const detailsPath = path.join(DATA_DIR, formattedDate, scheduledHour, "details");
     const filePath = path.join(detailsPath, `${listno}.json`);
 
-    try {
-        console.log(`🛠️ [DEBUG] 생성된 filePath: ${filePath}`);
-        await fs.access(filePath);
-        console.log(`📂 [JobKorea Detail] 기존 데이터 존재: ${filePath}`);
+    // try {
+    //     apiLogger.info(`🛠️ [DEBUG] 생성된 filePath: ${filePath}`);
+    //     await fs.access(filePath);
+    //     apiLogger.info(`📂 [JobKorea Detail] 기존 데이터 존재: ${filePath}`);
 
+    //     const existingData = await fs.readFile(filePath, "utf-8");
+    //     res.json(JSON.parse(existingData));
+    //     return;
+    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // } catch (error: unknown) {
+    //     apiLogger.info(`⚠️ [JobKorea Detail] 기존 데이터 없음 → 크롤링 실행! (${filePath})`);
+    // }
+
+    // ✅ 기존 데이터가 없을 경우 크롤링 실행
+    // const jobUrl = `https://www.jobkorea.co.kr/Recruit/GI_Read/${jobId}`;
+    // const jobDetail = await jobKoreaDetailScrape(jobId, jobUrl);
+
+    // if (!jobDetail) {
+    //     res.status(404).json({ message: "❌ 채용 상세 정보를 찾을 수 없습니다." });
+    //     return;
+    // }
+
+     // await fs.mkdir(detailsPath, { recursive: true });
+    // await fs.writeFile(filePath, JSON.stringify(jobDetail, null, 2));
+    // apiLogger.info(`✅ [JobKorea Detail] 저장 완료: ${filePath}`);
+
+    // res.json(jobDetail);
+// });
+
+    try {
+        // ✅ JSON 파일이 존재하는 경우 그대로 반환
+        await fs.access(filePath);
+        apiLogger.info(`📂 [JobKorea Detail] 기존 데이터 존재: ${filePath}`);
         const existingData = await fs.readFile(filePath, "utf-8");
         res.json(JSON.parse(existingData));
         return;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error: unknown) {
-        console.log(`⚠️ [JobKorea Detail] 기존 데이터 없음 → 크롤링 실행! (${filePath})`);
+    } catch {
+        apiLogger.info(`⚠️ [JobKorea Detail] 기존 데이터 없음 → 크롤링 실행! (${filePath})`);
     }
 
-    // ✅ 기존 데이터가 없을 경우 크롤링 실행
-    const jobUrl = `https://www.jobkorea.co.kr/Recruit/GI_Read/${jobId}`;
-    const jobDetail = await jobKoreaDetailScrape(jobUrl);
+    try {
+        // ✅ 기존 데이터가 없을 경우 크롤링 실행
+        const jobUrl = `https://www.jobkorea.co.kr/Recruit/GI_Read/${jobId}`;
+        const jobDetail = await jobKoreaDetailScrape(jobId, jobUrl);
 
-    if (!jobDetail) {
-        res.status(404).json({ message: "❌ 채용 상세 정보를 찾을 수 없습니다." });
-        return;
+        if (!jobDetail) {
+            res.status(404).json({ message: "❌ 채용 상세 정보를 찾을 수 없습니다." });
+            return;
+        }
+
+        await fs.mkdir(detailsPath, { recursive: true });
+        await fs.writeFile(filePath, JSON.stringify(jobDetail, null, 2));
+        apiLogger.info(`✅ [JobKorea Detail] 저장 완료: ${filePath}`);
+
+        res.json(jobDetail);
+    } catch (error) {
+        apiLogger.error("❌ [JobKorea Detail] 크롤링 및 저장 중 오류 발생:", error);
+        res.status(500).json({ message: "채용 상세 정보를 가져오는 중 오류 발생", error: String(error) });
     }
-
-    await fs.mkdir(detailsPath, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(jobDetail, null, 2));
-    console.log(`✅ [JobKorea Detail] 저장 완료: ${filePath}`);
-
-    res.json(jobDetail);
 });
+
+
 
 
 export default router;

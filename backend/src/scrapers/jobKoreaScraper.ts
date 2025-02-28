@@ -1,4 +1,6 @@
 import puppeteer from "puppeteer";
+import { crawlerLogger } from "../utils/logger";
+
 
 // ✅ Job 타입 정의
 interface Job {
@@ -16,12 +18,12 @@ interface Job {
 }
 
 const jobKoreaScrape = async (): Promise<Job[]> => {
-    console.log("✅ [JobKorea Scraper] 실행됨!");
+    crawlerLogger.info("✅ [JobKorea Scraper] 실행됨!");
 
     try {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
-        console.log("✅ Puppeteer 브라우저 실행됨!");
+        crawlerLogger.info("✅ Puppeteer 브라우저 실행됨!");
 
         const jobName = "프론트엔드";
         const region = "B040"; // 과천
@@ -30,7 +32,7 @@ const jobKoreaScrape = async (): Promise<Job[]> => {
             `https://www.jobkorea.co.kr/Search/?stext=${jobName}&local=${region}&tabType=recruit&Page_No=1`,
             { waitUntil: "networkidle2" }
         );
-        console.log("✅ 페이지 이동 완료!");
+        crawlerLogger.info("✅ 페이지 이동 완료!");
 
         const jobs: Job[] = await page.$$eval(
             'section.content-recruit[data-content="recruit"] article.list article.list-item',
@@ -41,7 +43,7 @@ const jobKoreaScrape = async (): Promise<Job[]> => {
                 elements.forEach((e) => {
                     const jobId = e.getAttribute("data-gno") || e.getAttribute("data-gino") || "";
                     if (!jobId) {
-                        console.warn("⚠️ 공고 ID 없음 → 스킵됨!", e);
+                        crawlerLogger.warn("⚠️ 공고 ID 없음 → 스킵됨!", e);
                         return;
                     }
 
@@ -50,7 +52,7 @@ const jobKoreaScrape = async (): Promise<Job[]> => {
                     const fullUrl = relativeUrl.startsWith("http") ? relativeUrl : baseUrl + relativeUrl;
 
                     if (!fullUrl || fullUrl === baseUrl) {
-                        console.warn("⚠️ URL이 없음 또는 올바르지 않음 → 스킵됨!", jobId);
+                        crawlerLogger.warn("⚠️ URL이 없음 또는 올바르지 않음 → 스킵됨!", jobId);
                         return;
                     }
 
@@ -88,11 +90,11 @@ const jobKoreaScrape = async (): Promise<Job[]> => {
         );
 
         await browser.close();
-        console.log("✅ 스크래핑 완료!");
+        crawlerLogger.info("✅ 스크래핑 완료!");
 
         return jobs;
     } catch (error) {
-        console.error("❌ [JobKorea Scraper] 스크래핑 오류 발생:", error);
+        crawlerLogger.error("❌ [JobKorea Scraper] 스크래핑 오류 발생:", error);
         return [];
     }
 };
