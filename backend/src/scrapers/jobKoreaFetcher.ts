@@ -44,10 +44,8 @@ const checkExistingJob = async (jobId: string): Promise<boolean> => {
         const query = {
             query: `{
                 Get {
-                    JobPostings(where: { path: ["properties.id"], operator: Equal, valueString: "${jobId}" }) {
-                        properties {
-                            id
-                        }
+                    JobPostings(where: { path: ["listno"], operator: Equal, valueString: "${jobId}" }) {
+                        listno
                     }
                 }
             }`
