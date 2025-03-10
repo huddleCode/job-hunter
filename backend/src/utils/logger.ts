@@ -13,7 +13,10 @@ const logsDir = path.join(__dirname, "../../logs");
 const crawlerLogger = winston.createLogger({
     level: "info",
     format: winston.format.combine(
-        winston.format.printf(({ level, message }) => `${getKSTTimestamp()} [CRAWLER] ${level}: ${message}`)
+        winston.format.errors({ stack: true }), // ❗️ 에러 스택을 포함
+        winston.format.printf(({ level, message, stack }) => 
+            `${getKSTTimestamp()} [API] ${level}: ${message}${stack ? `\n${stack}` : ""}`
+        )
     ),
     transports: [
         new winston.transports.File({ filename: path.join(logsDir, "crawler.log") }), // 크롤러 로그 파일

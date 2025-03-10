@@ -19,4 +19,7 @@ export interface JobDetail {
     position: string;
     certification: string;
     revenue: string;
-}
+     // ✅ 추가된 필드
+     isImageType: boolean; // ✅ 이미지 여부
+     detailedText?: string; // 상세 요강 텍스트 (이미지일 경우 생략 가능)
+ }

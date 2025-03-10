@@ -3,6 +3,7 @@ import path from "path";
 import { jobKoreaScrape } from "./jobKoreaScraper";
 import axios from "axios";
 import { apiLogger } from "../utils/logger";
+import { v4 as uuidv4 } from "uuid"; // ✅ UUID 생성기 추가
 
 interface WeaviateResponse {
     data?: {
@@ -91,32 +92,45 @@ const saveToWeaviate = async (jobData: JobPosting[]) => {
 
             const data = {
                 class: "JobPostings",
+                id: uuidv4(), // ✅ UUID 자동 생성
                 properties: {
-                    id: job.id,
-                    listno: job.listno || "N/A",
-                    title: job.title || "제목 없음",
-                    company: job.company || "회사명 없음",
-                    workExperience: job.workExperience || "경력 정보 없음",
-                    education: job.education || "학력 정보 없음",
-                    workType: job.workType || "근무 형태 없음",
-                    location: job.location || "근무 지역 없음",
-                    deadline: job.deadline || "마감일 없음",
-                    link: job.link || "링크 없음",
-                    description: job.description || "채용 상세 정보를 불러오는 중입니다."
+                    listno: String(job.id || "N/A"), // 기존 ID를 listno에 저장
+                    title: String(job.title || "제목 없음"),
+                    company: String(job.company || "회사명 없음"),
+                    workExperience: String(job.workExperience || "경력 정보 없음"),
+                    education: String(job.education || "학력 정보 없음"),
+                    workType: String(job.workType || "근무 형태 없음"),
+                    location: String(job.location || "근무 지역 없음"),
+                    deadline: String(job.deadline || "마감일 없음"),
+                    link: String(job.link || "링크 없음"),
+                    description: String(job.description || "채용 상세 정보를 불러오는 중입니다.")
                 }
             };
+
+            apiLogger.info(`🔍 [Weaviate] 저장 시도: ${JSON.stringify(data)}`);
 
             await axios.post("http://localhost:8080/v1/objects", data, {
                 headers: { "Content-Type": "application/json" }
             });
 
             apiLogger.info(`✅ [Weaviate] 목록 데이터 저장 완료: ${job.title} @ ${job.company}`);
-        } catch (error) {
-            apiLogger.error(`❌ [Weaviate] 목록 데이터 저장 실패: ${job.title} @ ${job.company}`, error instanceof Error ? error.message : JSON.stringify(error));
+        } catch (error: unknown) {
+            let errorMessage = "알 수 없는 오류";
+
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+
+            apiLogger.error(`❌ [Weaviate] 목록 데이터 저장 실패: ${job.title} @ ${job.company}`);
+            apiLogger.error(`❗️ 상세 에러 메시지: ${errorMessage}`);
+            
+            const err = error as { response?: { data?: Record<string, unknown> } };
+            if (err.response?.data) {
+                apiLogger.error(`🛠 Weaviate 응답: ${JSON.stringify(err.response.data)}`);
+            }
         }
     }
 };
-
 
 const jobKoreaFetch = async () => {
     const { folderPath, filePath } = getJobKoreaFilePath();

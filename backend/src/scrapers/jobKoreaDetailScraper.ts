@@ -2,9 +2,11 @@ import puppeteer from "puppeteer";
 import fs from "fs/promises";
 import path from "path";
 import { crawlerLogger } from "../utils/logger";
-import { saveJobDetailToWeaviate } from "../api/weaviate/saveJobDetailToWeaviate";
+// import { saveJobDetailToWeaviate } from "../api/weaviate/saveJobDetailToWeaviate";
+import { JobDetail } from "../types/job";
 
 const DATA_DIR = path.join(__dirname, "../../data");
+
 
 // ✅ 채용 상세 정보 스크래핑 함수
 const jobKoreaDetailScrape = async (jobId: string, jobUrl: string) => {
@@ -62,6 +64,10 @@ const jobKoreaDetailScrape = async (jobId: string, jobUrl: string) => {
                     .join(" ");
             };
 
+            const isImageType = !!document.querySelector('td.detailTable img');
+            const detailedTextElement = document.querySelector('td.detailTable .content_sec') as HTMLElement;
+            const detailedText = detailedTextElement?.innerHTML?.trim() || 'EMPTY_HTML';
+
             return {
                 title: getJobTitle(), // ✅ 직무명
                 company: getText(".coName"), // ✅ 회사명
@@ -81,24 +87,110 @@ const jobKoreaDetailScrape = async (jobId: string, jobUrl: string) => {
                 preferredQualifications: getTextByLabel("우대"), // ✅ 우대사항 (영어 변환)
                 position: getTextByLabel("직책"), // ✅ 직책 (영어 변환)
                 certification: getTextByLabel("인증"), // ✅ 인증 (영어 변환)
-                revenue: getTextByLabel("매출액") // ✅ 매출액 (영어 변환)
+                revenue: getTextByLabel("매출액"), // ✅ 매출액 (영어 변환)
+                isImageType,
+                detailedText
             };
         });
 
-        await browser.close();
-
-        if (jobDetail) {
-            // ✅ Weaviate에 상세 데이터 저장
-            await saveJobDetailToWeaviate(jobId, jobDetail);
-        } else {
-            crawlerLogger.warn(`⚠️ [JobKorea Detail Scraper] 스크래핑된 데이터가 없음: ${jobUrl}`);
+        if (!jobDetail.isImageType) {
+            crawlerLogger.info(`🟢 [DEBUG] 이미지가 아니므로 추가 스크래핑 진행: ${jobId}`);
+            const updatedJobDetail = await scrapeJobDetailedInfo(jobId, jobUrl, jobDetail);
+            return updatedJobDetail;
         }
 
+        await browser.close();
+
+        // if (jobDetail) {
+        //     // ✅ Weaviate에 상세 데이터 저장
+        //     await saveJobDetailToWeaviate(jobId, jobDetail);
+        // } else {
+        //     crawlerLogger.warn(`⚠️ [JobKorea Detail Scraper] 스크래핑된 데이터가 없음: ${jobUrl}`);
+        // }
+
         return jobDetail;
+
+        // if (!jobDetail.isImageType) {
+        //     crawlerLogger.info(`🟢 [DEBUG] 이미지가 아니므로 추가 스크래핑 진행: ${jobId}`);
+        //     const updatedJobDetail = await scrapeJobDetailedInfo(jobId, jobUrl, jobDetail);
+        //     return updatedJobDetail;
+        // }
+
     } catch (error) {
         crawlerLogger.error("❌ [JobKorea Detail Scraper] 오류 발생:", error);
         return null;
     }
 };
 
-export { jobKoreaDetailScrape };
+
+// ✅ 추가 스크래핑 함수 (텍스트/테이블 형태만)
+const scrapeJobDetailedInfo = async (jobId: string, jobUrl: string, existingJobDetail: JobDetail): Promise<JobDetail> => {
+    crawlerLogger.info(`🔍 [JobKorea Additional Scraper] 상세 요강 스크래핑: ${jobUrl}`);
+
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(jobUrl, { waitUntil: "networkidle2" });
+
+    let detailedText = '';
+
+    try {
+        // 🟢 iFrame 요소가 나타날 때까지 최대 10초 대기
+        await page.waitForSelector('iframe[name="gib_frame"]', { timeout: 10000 });
+        crawlerLogger.info(`🟢 [DEBUG] iFrame 요소 감지 완료: ${jobId}`);
+
+        // ✅ 올바른 방법으로 iFrame 내부 Frame 접근
+        const iframeElement = await page.$('iframe[name="gib_frame"]');
+        const iframe = await iframeElement?.contentFrame();
+
+        if (iframe) {
+            // ✅ iFrame 내부 .detailTable 요소 감지 대기
+            await iframe.waitForSelector('.detailTable', { timeout: 10000 });
+            crawlerLogger.info(`🟢 [DEBUG] iFrame 내부 .detailTable 요소 감지 완료: ${jobId}`);
+            
+            // 🟢 스크린 캡처 (iFrame 내부)
+            // await page.screenshot({ path: `screenshot_${jobId}_iframe.png`, fullPage: true });
+            // crawlerLogger.info(`📸 [JobKorea Additional Scraper] iFrame 내부 스크린 캡처 저장 완료: screenshot_${jobId}_iframe.png`);
+
+            detailedText = await iframe.evaluate(() => {
+                const container = document.querySelector('.detailTable') as HTMLElement;
+                if (!container) return 'EMPTY_TEXT1';
+            
+                const elements = container.querySelectorAll('p, li, h1, h2, h3, span, strong');
+                
+                // ✅ Set을 사용해 중복 텍스트 제거
+                const textContent = Array.from(new Set(Array.from(elements)
+                    .map(el => el.textContent?.trim() ?? '')
+                    .filter(Boolean) // 빈 문자열 제거
+                )).join('\n');
+                
+                return textContent || 'EMPTY_TEXT2';
+            });
+            
+
+            crawlerLogger.info(`✅ [JobKorea Additional Scraper] 상세 요강 추출 완료: ${jobId}, 내용: ${detailedText}`);
+        } else {
+            crawlerLogger.error(`❌ [JobKorea Additional Scraper] iFrame 콘텐츠 접근 실패: ${jobId}`);
+        }
+
+    } catch (error) {
+        crawlerLogger.error(`❌ [JobKorea Additional Scraper] 스크래핑 오류 발생: ${error}`);
+        // await page.screenshot({ path: `screenshot_${jobId}_error.png`, fullPage: true });
+        // crawlerLogger.error(`📸 [JobKorea Additional Scraper] 오류 시 스크린 캡처 저장 완료: screenshot_${jobId}_error.png`);
+    } finally {
+        await browser.close();
+    }
+
+    const updatedJobDetail: JobDetail = {
+        ...existingJobDetail,
+        detailedText 
+    };
+
+    crawlerLogger.info(`✅ [JobKorea Additional Scraper] 상세 요강 최종 업데이트 완료: ${jobId}`);
+
+    return updatedJobDetail;
+};
+
+
+
+
+export { jobKoreaDetailScrape, scrapeJobDetailedInfo };

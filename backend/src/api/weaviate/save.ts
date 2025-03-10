@@ -10,9 +10,11 @@ router.post('/', async (req, res) => {
 
         const data = {
             class: "JobPostings",
-            company,
-            title,
-            description
+            properties: {
+                company,
+                title,
+                description
+            }
         };
 
         const response = await axios.post(WEAVIATE_URL, data, {
