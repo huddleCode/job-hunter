@@ -13,7 +13,6 @@ router.post('/', async (req, res) => {
                     JobPostings {
                         company
                         title
-                        description
                     }
                 }
             }`

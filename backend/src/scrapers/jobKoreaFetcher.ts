@@ -24,7 +24,6 @@ interface JobPosting {
     location: string;
     deadline: string;
     link: string;
-    description: string;
 }
 
 const DATA_DIR = path.join(__dirname, "../../data");
@@ -103,7 +102,7 @@ const saveToWeaviate = async (jobData: JobPosting[]) => {
                     location: String(job.location || "근무 지역 없음"),
                     deadline: String(job.deadline || "마감일 없음"),
                     link: String(job.link || "링크 없음"),
-                    description: String(job.description || "채용 상세 정보를 불러오는 중입니다.")
+                    // description: String(job.description || "채용 상세 정보를 불러오는 중입니다.")
                 }
             };
 

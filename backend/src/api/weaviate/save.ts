@@ -6,14 +6,13 @@ const WEAVIATE_URL = 'http://localhost:8080/v1/objects';
 
 router.post('/', async (req, res) => {
     try {
-        const { company, title, description } = req.body;
+        const { company, title } = req.body;
 
         const data = {
             class: "JobPostings",
             properties: {
                 company,
                 title,
-                description
             }
         };
 

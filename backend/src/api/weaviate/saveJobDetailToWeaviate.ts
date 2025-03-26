@@ -240,6 +240,4 @@ const saveJobAdviceToWeaviate = async (jobId: string, title: string, company: st
     }
 };
 
-
-
 export { saveJobDetailToWeaviate, updateJobDetailInWeaviate, getJobAdviceFromWeaviate, saveJobAdviceToWeaviate };
